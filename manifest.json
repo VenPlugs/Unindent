@@ -1,0 +1,7 @@
+{
+  "name": "Unindent",
+  "version": "1.0.0",
+  "description": "Trims unnecessary indentation when pasting code",
+  "author": "Vendicated",
+  "license": "Apache-2.0"
+}
