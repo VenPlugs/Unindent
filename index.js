@@ -17,7 +17,7 @@ const { Plugin } = require("powercord/entities");
 const { inject, uninject } = require("powercord/injector");
 const { messages, getModule } = require("powercord/webpack");
 
-const indents = [, " ", "\t"];
+// const indents = [, " ", "\t"];
 
 const sendMessageInjectionId = "unindentSendMessage";
 const codeblockInjectionId = "unindentCodeblocks";
@@ -30,7 +30,12 @@ module.exports = class Unindent extends Plugin {
       "sendMessage",
       args => {
         const msg = args[1];
-        msg.content = msg.content.replace(/```(.|\n)*?```/g, m => this.unindent(m, 1));
+        msg.content = msg.content.replace(/```(.|\n)*?```/g, m => {
+          const lines = m.split("\n");
+          let suffix = "";
+          if (lines[lines.length - 1] === "```") suffix = lines.pop();
+          return `${lines[0]}\n${this.unindent(lines.slice(1).join("\n"))}\n${suffix}`;
+        });
         return args;
       },
       true
@@ -43,14 +48,14 @@ module.exports = class Unindent extends Plugin {
       parser.defaultRules.codeBlock,
       "react",
       args => {
-        args[0].content = this.unindent(args[0].content, 0);
+        args[0].content = this.unindent(args[0].content);
         return args;
       },
       true
     );
   }
 
-  unindent(str, firstLineIdx) {
+  unindent(str) {
     const minIndent = str.match(/^ *(?=\S)/gm)?.reduce((prev, curr) => Math.min(prev, curr.length), Infinity) ?? 0;
     return str.replace(new RegExp(`^ {${minIndent}}`, "gm"), "");
     //
