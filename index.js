@@ -17,8 +17,6 @@ const { Plugin } = require("powercord/entities");
 const { inject, uninject } = require("powercord/injector");
 const { messages, getModule } = require("powercord/webpack");
 
-// const indents = [, " ", "\t"];
-
 const sendMessageInjectionId = "unindentSendMessage";
 const codeblockInjectionId = "unindentCodeblocks";
 
@@ -32,6 +30,7 @@ module.exports = class Unindent extends Plugin {
         const msg = args[1];
         msg.content = msg.content.replace(/```(.|\n)*?```/g, m => {
           const lines = m.split("\n");
+          if (lines.length < 2) return m; // Do not affect inline codeblocks
           let suffix = "";
           if (lines[lines.length - 1] === "```") suffix = lines.pop();
           return `${lines[0]}\n${this.unindent(lines.slice(1).join("\n"))}\n${suffix}`;
@@ -56,56 +55,11 @@ module.exports = class Unindent extends Plugin {
   }
 
   unindent(str) {
+    // Users cannot send tabs, they get converted to spaces. However, a bot may send tabs, so convert them to 4 spaces first
+    str = str.replace(/\t/g, "    ");
     const minIndent = str.match(/^ *(?=\S)/gm)?.reduce((prev, curr) => Math.min(prev, curr.length), Infinity) ?? 0;
+    if (!minIndent) return str;
     return str.replace(new RegExp(`^ {${minIndent}}`, "gm"), "");
-    //
-    // const lines = str.split("\n");
-    // // First line sometimes (?) has no indent (thanks discord), so use the second line as reference in these cases
-    // let choseSecondLine = false;
-    // let firstIndentedLine;
-    // if (indents.indexOf(lines[firstLineIdx].charAt(0)) === -1) {
-    // firstIndentedLine = lines[firstLineIdx + 1];
-    // choseSecondLine = true;
-    // } else {
-    // firstIndentedLine = lines[firstLineIdx];
-    // }
-    //
-    // if (!firstIndentedLine) return str;
-    //
-    // let indentAmount = 0;
-    // for (const char of firstIndentedLine) {
-    // const idx = indents.indexOf(char);
-    // if (idx === -1) break;
-    // indentAmount += idx;
-    // }
-    //
-    // // FIXME (Find less hacky solution): If indent amount is based on second line, try to figure out it is in block (thus indented further) and if so leave additional indent
-    // if (
-    // choseSecondLine &&
-    // (lines[firstLineIdx].includes("{") ||
-    // lines[firstLineIdx].endsWith(":") ||
-    // lines[firstLineIdx].endsWith("; then") ||
-    // firstIndentedLine.indexOf("{") === indentAmount + 1)
-    // )
-    // indentAmount -= 2;
-    //
-    // if (indentAmount <= 0) return str;
-    //
-    // for (let i = firstLineIdx; i < lines.length; i++) {
-    // const line = lines[i];
-    // let unindentedIdx = 0;
-    // for (let j = 0, unindentedAmount = 0; j < line.length; j++) {
-    // const char = line[j];
-    // const idx = indents.indexOf(char);
-    // if (idx === -1) break;
-    // unindentedIdx++;
-    // unindentedAmount += idx;
-    // if (unindentedAmount >= indentAmount) break;
-    // }
-    // lines[i] = line.slice(unindentedIdx);
-    // }
-    //
-    // return lines.join("\n");
   }
 
   pluginWillUnload() {

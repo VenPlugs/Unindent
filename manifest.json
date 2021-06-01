@@ -1,6 +1,6 @@
 {
   "name": "Unindent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Trims unnecessary indentation when pasting code or viewing codeblocks",
   "author": "Vendicated",
   "license": "Apache-2.0"
